@@ -28,7 +28,35 @@ import struct
 import termios
 
 from urwid import (Terminal, TermCanvas)
-from urwid.vterm import EOF
+from urwid.compat import B
+try:
+    from urwid.vterm import EOF
+except ImportError:
+    EOF = B('')
+
+
+def waitstatus_to_exitcode(waitstatus):
+    '''If the process exited normally (if WIFEXITED(status) is true), return
+    the process exit status (return WEXITSTATUS(status)): result greater
+    than or equal to 0.
+
+    If the process was terminated by a signal (if WIFSIGNALED(status) is
+    true), return -signum where signum is the number of the signal that
+    caused the process to terminate (return -WTERMSIG(status)): result less
+    than 0.
+
+    Otherwise, raise a ValueError.'''
+
+    # This function is for python 3.9 compat
+
+    if getattr(os, 'waitstatus_to_exitcode', None):
+        return os.waitstatus_to_exitcode(waitstatus)
+    if os.WIFEXITED(waitstatus):
+        return os.WEXITSTATUS(waitstatus)
+    if os.WIFSIGNALED(waitstatus):
+        return -os.WTERMSIG(waitstatus)
+
+    raise ValueError
 
 class TSTerminal(Terminal):
     signals = Terminal.signals + ['exitcode', 'feed', 'done', 'spawn']
@@ -56,7 +84,7 @@ class TSTerminal(Terminal):
                 self.set_termsize(0, 0)
                 # upstream: improve process cleanup, much testing, add signal
                 pid, status = os.waitpid(self.pid, os.WNOHANG)
-                self._emit('exitcode', os.waitstatus_to_exitcode(status))
+                self._emit('exitcode', waitstatus_to_exitcode(status))
 
                 if pid == self.pid:
                     return
