@@ -190,7 +190,7 @@ def setup_diagnostic():
 
     os.makedirs('logs', exist_ok=True)
 
-    logging.basicConfig(filename='logs/tailspin.log', encoding='utf-8',
+    logging.basicConfig(filename='logs/tailspin.log',
                         format=log_format, level=logging.DEBUG)
 
 
@@ -224,3 +224,5 @@ def main():
         logging.debug('exit')
     except BaseException:
         logging.exception('base exception')
+        print(traceback.format_exc())
+        sys.exit(1)
