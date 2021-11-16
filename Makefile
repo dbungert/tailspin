@@ -2,7 +2,7 @@
 APP:=python3 -m tailspin
 
 run:
-	$(APP) -r 3 ./scripts/quick 10
+	$(APP) -er3 ./scripts/quick 10
 
 color:
 	$(APP) -r 1 ls -al --color=yes

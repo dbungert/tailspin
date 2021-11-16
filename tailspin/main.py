@@ -111,6 +111,7 @@ class SubprocessLog:
 
 class TopFrame(urwid.WidgetWrap):
     def __init__(self):
+        self.last_result = None
         self.cmd_arr = args.command
         self.log = SubprocessLog()
         self.command = urwid.Text(f'Command: {" ".join(self.cmd_arr)}')
@@ -135,7 +136,9 @@ class TopFrame(urwid.WidgetWrap):
         urwid.WidgetWrap.__init__(self, self.frame)
 
     def set_exitcode(self, _, rc):
-        self.pass_rate.complete(rc == 0)
+        success = rc == 0
+        self.pass_rate.complete(success)
+        self.last_result = success
 
     def set_duration(self, delta):
         td = timedelta(seconds=delta)
@@ -156,7 +159,9 @@ class TopFrame(urwid.WidgetWrap):
         self.end_run()
         self.runs.value += 1
         if self.runs.needs_more:
-            self.term.run()
+            if not args.exit or self.last_result:
+                self.term.run()
+
 
     def on_feed(self, _, data):
         self.log.write(data)
@@ -199,6 +204,9 @@ def parse_args():
     parser.add_argument('-r', '--runs', type=int, default=1,
                         help='Number of times to loop the command. ' +
                              'Default=1.  0=forever')
+    parser.add_argument('-e', '--exit', default=False,
+                        action='store_true',
+                        help='Exit on failure.  Default is to keep running.')
     parser.add_argument('command', nargs=argparse.REMAINDER,
                         help='Command and arguments to run.')
     global args
